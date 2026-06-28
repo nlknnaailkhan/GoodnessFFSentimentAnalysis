@@ -1,0 +1,8 @@
+omegaconf
+gensim
+nltk
+numpy
+torch
+torchvision
+pandas
+kagglehub
