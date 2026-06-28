@@ -14,41 +14,18 @@ from src.ffdata import get_data
 from src.ffmodel import get_model_and_optimizer
 
 # 1. Config Block
-config_dict = {
-    "seed": 100,
-    "device": "cuda" if torch.cuda.is_available() else "cpu",
-    "input": {
-        "path": "datasets",
-        "batch_size": 100,
-        "num_classes": 10,
-        "num_features": 310
-    },
-    "model": {
-        "peer_normalization": 0.03,
-        "momentum": 0.9,
-        "hidden_dim": 200,
-        "num_layers": 3,
-        "goodness_type": "log_sum_exp"
-    },
-    "training": {
-        "epochs": 50,
-        "learning_rate": 3e-4,
-        "weight_decay": 3e-4,
-        "momentum": 0.9,
-        "downstream_learning_rate": 1e-2,
-        "downstream_weight_decay": 3e-3,
-        "val_idx": -1,
-        "final_test": True
-    }
-}
-opt = OmegaConf.create(config_dict)
+opt = OmegaConf.load("config.yaml")
+opt.device = "cuda" if torch.cuda.is_available() else "cpu"
+
 
 def download_and_preprocess_data():
     output_dir = opt.input.path
-    if os.path.exists(os.path.join(output_dir, "train_images.npy")):
+    images_exist = os.path.exists(os.path.join(output_dir, "train_images.npy"))
+    labels_exist = os.path.exists(os.path.join(output_dir, "train_labels.npy"))
+    
+    if images_exist and labels_exist:
         print("Dataset files already processed. Skipping download phase.")
         return
-
     print("Loading Word2Vec embeddings (this may take a minute)...")
     word2vec = api.load("word2vec-google-news-300")
     print("Embeddings loaded successfully!")
@@ -58,12 +35,14 @@ def download_and_preprocess_data():
     print("Path to dataset files:", path)
 
     os.makedirs(output_dir, exist_ok=True)
-    csv_file = [f for f in os.listdir(path) if f.endswith('.csv')][0]
-    csv_path = os.path.join(path, csv_file)
+    
+    csv_path = os.path.join(path, 'data_rt.csv')
     df = pd.read_csv(csv_path)
 
-    raw_labels = df.iloc[:, 0].values
-    raw_reviews = df.iloc[:, 1].values
+    raw_reviews = df.iloc[:, 0].values
+    raw_labels = df.iloc[:, 1].values
+    print(raw_reviews)
+    print(raw_labels)
 
     np.random.seed(42)
     shuffle_indices = np.random.permutation(len(raw_reviews))
